@@ -2,10 +2,11 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import time
-
+import sys
+from simple_maze_env.envs.graphics.graphics import VisualRenderer
 
 class SimpleMazeEnv(gym.Env):
-    metadata = {'render.modes': ['human']}
+    metadata = {'render.modes': ['cli', 'graphics']}
 
     def __init__(self):
         self.safe_path = [(0, 0), (0, 1), (0, 2), (0, 3),
@@ -20,6 +21,8 @@ class SimpleMazeEnv(gym.Env):
         self.done = False
         self.info = "Info"
         self.temp_loc = ()
+        self.visualiser = VisualRenderer(self.state)
+        self.config = {"sleep": 1}
 
     def get_state_no(self, loc):
         return 4 * loc[0] + loc[1]
@@ -62,16 +65,17 @@ class SimpleMazeEnv(gym.Env):
         self.done = False  # holds the termination information
 
         if self.agent_loc == self.trm_loc:  # check the self.done is reached?
-            self.reward = 100  # give 100 self.reward if it terminates the episode
+            self.reward = 1  # give 100 self.reward if it terminates the episode
             self.done = True  # bool of termination is true
             
         # check fell into cliffs?
         elif self.agent_loc in self.cliffs or (possible_next_loc in self.cliffs or possible_next_loc not in self.safe_path):
-            self.reward = -10  # give -100 self.reward if it falls into the cliffs
+            # self.reward = -10  # give -100 self.reward if it falls into the cliffs
             self.done = False  # bool of termination is true
             self.agent_loc = self.start_loc  # agent is sent to start state
+            
         else:
-            self.reward = -1  # default value
+            self.reward = 0  # default value
             self.done = False  # default value
 
         self.state = self.get_state_no(self.agent_loc)
@@ -87,24 +91,30 @@ class SimpleMazeEnv(gym.Env):
         self.done = False
         return [self.state, self.reward, self.done, self.info]
 
-    def render(self, mode='human', close=False):
-        maze = [[".", ".", ".", "."],
+    def render(self, mode='cli', close=False):
+        if mode=='cli':
+            maze = [[".", ".", ".", "."],
                 [".", ".", ".", "."],
                 [".", ".", ".", "."],
                 [".", ".", ".", "."]]
 
-        def reset_maze():
-            for safe in self.safe_path:
-                maze[safe[0]][safe[1]] = "-"
+            def reset_maze():
+                for safe in self.safe_path:
+                    maze[safe[0]][safe[1]] = "-"
 
-            for cliff in self.cliffs:
-                maze[cliff[0]][cliff[1]] = "X"
+                for cliff in self.cliffs:
+                    maze[cliff[0]][cliff[1]] = "X"
 
-        reset_maze()
+            reset_maze()
 
-        maze[self.agent_loc[0]][self.agent_loc[1]] = "O"
+            maze[self.agent_loc[0]][self.agent_loc[1]] = "O"
 
-        for k in range(4):
-            print(maze[k])
-        print("\n")
-        time.sleep(1)
+            for k in range(4):
+                print(maze[k])
+            print("\n")
+            time.sleep(1)
+        elif mode=='graphics':
+            self.visualiser.render(self.state)
+            time.sleep(self.config["sleep"])
+            
+
