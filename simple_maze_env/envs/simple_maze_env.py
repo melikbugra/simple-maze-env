@@ -1,9 +1,10 @@
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
+import time
 
 
-class FooEnv(gym.Env):
+class SimpleMazeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
@@ -38,8 +39,8 @@ class FooEnv(gym.Env):
             if possible_next_loc[1] >= 0:  # check the agent within grid?
                 # if within grid, current location is possible location
                 self.agent_loc = possible_next_loc
-            # else:
-                # self.agent_loc = (1, 0)  # go to a cliff
+            else:
+                self.agent_loc = (1, 0)  # go to a cliff
         elif action == 2:  # down
             self.temp_loc = self.agent_loc
             possible_next_loc = (self.agent_loc[0] + 1, self.agent_loc[1])
@@ -63,11 +64,12 @@ class FooEnv(gym.Env):
         if self.agent_loc == self.trm_loc:  # check the self.done is reached?
             self.reward = 100  # give 100 self.reward if it terminates the episode
             self.done = True  # bool of termination is true
+            
         # check fell into cliffs?
         elif self.agent_loc in self.cliffs or (possible_next_loc in self.cliffs or possible_next_loc not in self.safe_path):
             self.reward = -10  # give -100 self.reward if it falls into the cliffs
             self.done = False  # bool of termination is true
-            self.agent_loc = self.temp_loc  # agent is sent to start state
+            self.agent_loc = self.start_loc  # agent is sent to start state
         else:
             self.reward = -1  # default value
             self.done = False  # default value
@@ -85,13 +87,11 @@ class FooEnv(gym.Env):
         self.done = False
         return [self.state, self.reward, self.done, self.info]
 
-        return self.rewSttTrm[1]
-
     def render(self, mode='human', close=False):
         maze = [[".", ".", ".", "."],
-                     [".", ".", ".", "."],
-                     [".", ".", ".", "."],
-                     [".", ".", ".", "."]]
+                [".", ".", ".", "."],
+                [".", ".", ".", "."],
+                [".", ".", ".", "."]]
 
         def reset_maze():
             for safe in self.safe_path:
@@ -106,3 +106,5 @@ class FooEnv(gym.Env):
 
         for k in range(4):
             print(maze[k])
+        print("\n")
+        time.sleep(1)

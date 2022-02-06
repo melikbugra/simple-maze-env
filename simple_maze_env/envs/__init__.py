@@ -1,1 +1,1 @@
-from gym_foo.envs.foo_env import FooEnv
+from simple_maze_env.envs.simple_maze_env import SimpleMazeEnv
