@@ -28,11 +28,13 @@ class SimpleMazeEnv(gym.Env):
         self.temp_loc = ()
         self.visualiser = VisualRenderer(self.state)
         self.config = {"sleep": 1}
+        self.length = 0
 
     def get_state_no(self, loc):
         return 4 * loc[0] + loc[1]
 
     def step(self, action):
+        self.length += 1
         if action == 0:  # up
             self.temp_loc = self.agent_loc
             possible_next_loc = (self.agent_loc[0] - 1, self.agent_loc[1])
@@ -72,9 +74,10 @@ class SimpleMazeEnv(gym.Env):
         if self.agent_loc == self.trm_loc:  # check the self.done is reached?
             self.reward = 100  # give 100 self.reward if it terminates the episode
             self.done = True  # bool of termination is true
+            self.agent_loc = self.start_loc  # agent is sent to start state
             
         # check fell into cliffs?
-        elif self.agent_loc in self.cliffs or (possible_next_loc in self.cliffs or possible_next_loc not in self.safe_path):
+        elif self.agent_loc in self.cliffs or (possible_next_loc in self.cliffs or possible_next_loc not in self.safe_path) or self.length >= 30:
             self.reward = -100  # give -100 self.reward if it falls into the cliffs
             self.done = True  # bool of termination is true
             self.agent_loc = self.start_loc  # agent is sent to start state
@@ -88,6 +91,7 @@ class SimpleMazeEnv(gym.Env):
         return [self.state, self.reward, self.done, self.info]
 
     def reset(self):
+        self.length = 0
         self. reward = 0
         # agentLoc is the current location of the agent
         self.agent_loc = self.start_loc
