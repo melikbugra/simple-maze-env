@@ -19,6 +19,7 @@ class VisualRenderer():
         
     
     def render(self, state):
+        pygame.event.get()
         pygame.display.set_caption("Simple Maze Environment")
         pygame.display.flip()
         self.win.fill((64, 224, 208))

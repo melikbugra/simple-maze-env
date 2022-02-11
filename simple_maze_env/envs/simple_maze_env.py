@@ -68,7 +68,7 @@ class SimpleMazeEnv(gym.Env):
             # else:
             #     self.agent_loc = (1, 0)  # go to a cliff
 
-        self.reward = -1  # initiate self.reward as -1,agent gets a -1 self.reward for its every step in safe path,so it does not stuck
+        self.reward = -10  # initiate self.reward as -1,agent gets a -1 self.reward for its every step in safe path,so it does not stuck
         self.done = False  # holds the termination information
 
         if self.agent_loc == self.trm_loc:  # check the self.done is reached?
@@ -83,7 +83,7 @@ class SimpleMazeEnv(gym.Env):
             self.agent_loc = self.start_loc  # agent is sent to start state
             
         else:
-            self.reward = -1  # default value
+            self.reward = -10  # default value
             self.done = False  # default value
 
         self.state = np.array(self.agent_loc, dtype=np.float32)
