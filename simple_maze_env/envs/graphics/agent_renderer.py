@@ -9,35 +9,35 @@ class AgentRenderer:
         self.agent_image = agent_image
 
     def draw_agent(self, stt):
-        if list(map(int, stt)) == [0, 0]:
+        if stt == 0:
             self.win.blit(self.agent_image, (151.25, 51.25))
-        if list(map(int, stt)) == [0, 1]:
+        if stt == 1:
             self.win.blit(self.agent_image, (283.75, 51.25))
-        if list(map(int, stt)) == [0, 2]:
+        if stt == 2:
             self.win.blit(self.agent_image, (416.25, 51.25))
-        if list(map(int, stt)) == [0, 3]:
+        if stt == 3:
             self.win.blit(self.agent_image, (548.75, 51.25))
-        if list(map(int, stt)) == [1, 0]:
+        if stt == 4:
             self.win.blit(self.agent_image, (151.25, 183.75))
-        if list(map(int, stt)) == [1, 1]:
+        if stt == 5:
             self.win.blit(self.agent_image, (283.75, 183.75))
-        if list(map(int, stt)) == [1, 2]:
+        if stt == 6:
             self.win.blit(self.agent_image, (416.25, 183.75))
-        if list(map(int, stt)) == [1, 3]:
+        if stt == 7:
             self.win.blit(self.agent_image, (548.75, 183.75))
-        if list(map(int, stt)) == [2, 0]:
+        if stt == 8:
             self.win.blit(self.agent_image, (151.25, 316.25))
-        if list(map(int, stt)) == [2, 1]:
+        if stt == 9:
             self.win.blit(self.agent_image, (283.75, 316.25))
-        if list(map(int, stt)) == [2, 2]:
+        if stt == 10:
             self.win.blit(self.agent_image, (416.25, 316.25))
-        if list(map(int, stt)) == [2, 3]:
+        if stt == 11:
             self.win.blit(self.agent_image, (548.75, 316.25))
-        if list(map(int, stt)) == [3, 0]:
+        if stt == 12:
             self.win.blit(self.agent_image, (151.25, 448.75))
-        if list(map(int, stt)) == [3, 1]:
+        if stt == 13:
             self.win.blit(self.agent_image, (283.75, 316.25))
-        if list(map(int, stt)) == [3, 2]:
+        if stt == 14:
             self.win.blit(self.agent_image, (416.25, 316.25))
-        if list(map(int, stt)) == [3, 3]:
+        if stt == 15:
             self.win.blit(self.agent_image, (548.75, 316.25))
