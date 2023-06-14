@@ -3,6 +3,7 @@ from gym import spaces
 import numpy as np
 import pygame
 import os.path as path
+from copy import deepcopy
 
 
 # Define actions
@@ -10,6 +11,8 @@ ACTION_UP = 0
 ACTION_DOWN = 1
 ACTION_LEFT = 2
 ACTION_RIGHT = 3
+
+MAX_SIZE = 30
 
 # Define colors
 BLACK = (0, 0, 0)
@@ -26,31 +29,30 @@ class SimpleMazeEnv(gym.Env):
 
         if not maze:
             self.maze = [
-    [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
-    [9, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9],
-    [9, 0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 0, 9],
-    [9, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 9],
-    [9, 0, 9, 0, 9, 9, 9, 9, 9, 9, 9, 0, 9, 0, 9],
-    [9, 0, 0, 0, 9, 0, 0, 0, 0, 0, 9, 0, 0, 0, 9],
-    [9, 0, 9, 0, 9, 9, 0, 9, 9, 0, 9, 9, 9, 0, 9],
-    [9, 0, 9, 0, 0, 9, 0, 9, 9, 0, 0, 0, 9, 0, 9],
-    [9, 0, 9, 9, 0, 9, 0, 0, 0, 0, 9, 0, 9, 0, 9],
-    [9, 0, 0, 9, 0, 0, 0, 9, 9, 9, 9, 0, 0, 0, 9],
-    [9, 9, 0, 0, 0, 9, 0, 9, 0, 0, 9, 9, 9, 9, 9],
-    [9, 9, 9, 9, 9, 9, 0, 9, 0, 0, 0, 0, 0, 2, 9],
-    [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9],
-    [9, 9, 9, 9, 9, 9, 9, 0, 9, 0, 9, 9, 9, 9, 9],
-    [9, 0, 9, 9, 9, 9, 9, 0, 9, 0, 9, 9, 9, 9, 9],
-    [9, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 9],
-    [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
-]
+                [9, 9, 9, 9, 9, 9],
+                [9, 1, 0, 0, 0, 9],
+                [9, 8, 8, 8, 0, 9],
+                [9, 0, 0, 0, 0, 9],
+                [9, 2, 8, 8, 8, 9],
+                [9, 9, 9, 9, 9, 9]
+            ]
         else:
+            try:
+                maze_np = np.array(maze)
+            except:
+                raise ValueError("Provide a valid maze!")
+
+            if maze_np.shape[0] > MAX_SIZE or maze_np.shape[1] > MAX_SIZE:
+                raise ValueError("Provide a valid maze (max size = 30)!")
             self.maze = maze
 
         # Set the dimensions of the maze
-        self.cell_size = 1000/len(self.maze[0])
-        self.maze_width = 1000
-        self.maze_height = 1000
+        if not cell_size:
+            self.cell_size = 500/len(self.maze[0])
+        else:
+            self.cell_size = cell_size
+        self.maze_width = len(self.maze[0])*self.cell_size
+        self.maze_height = len(self.maze)*self.cell_size
         
         
         self.action_space = spaces.Discrete(4)
@@ -62,24 +64,8 @@ class SimpleMazeEnv(gym.Env):
         self.steps = 0
         self.finished = False
 
-        agent_file_path = path.dirname(path.abspath(__file__)) + '/images/agent.png'
+        self.pygame_init_switch = 0
         
-        # Initialize Pygame
-        pygame.init()
-        
-        # Set up the screen
-        self.screen = pygame.display.set_mode((self.maze_width, self.maze_height))
-        pygame.display.set_caption("Maze Game")
-        
-        # Set up clock for frame rate
-        self.clock = pygame.time.Clock()
-        
-        # Set up font for rendering text
-        self.font = pygame.font.SysFont(None, 36)
-        
-        # Load the agent image
-        self.agent_image = pygame.image.load(agent_file_path).convert_alpha()
-        self.agent_image = pygame.transform.scale(self.agent_image, (self.cell_size, self.cell_size))
     
     def reset(self):
         self.agent_x = 1
@@ -108,8 +94,27 @@ class SimpleMazeEnv(gym.Env):
         return observation, reward, done, info
     
     def render(self, mode='human'):
-        # Clear the screen
-        self.screen.fill(BLACK)
+        if self.pygame_init_switch == 0:
+            self.agent_file_path = path.dirname(path.abspath(__file__)) + '/images/agent.png'
+            # Initialize Pygame
+            pygame.init()
+            
+            # Set up the screen
+            self.screen = pygame.display.set_mode((self.maze_width, self.maze_height))
+            pygame.display.set_caption("Maze Game")
+            
+            # Set up clock for frame rate
+            self.clock = pygame.time.Clock()
+            
+            # Set up font for rendering text
+            self.font = pygame.font.SysFont(None, 36)
+            
+            # Load the agent image
+            self.agent_image = pygame.image.load(self.agent_file_path).convert_alpha()
+            self.agent_image = pygame.transform.scale(self.agent_image, (self.cell_size, self.cell_size))
+            # Clear the screen
+            self.screen.fill(BLACK)
+            self.pygame_init_switch = 1
         
         # Draw the maze
         self._draw_maze()
@@ -124,7 +129,9 @@ class SimpleMazeEnv(gym.Env):
         self.clock.tick(60)
     
     def _get_observation(self):
-        return np.array(self.maze)
+        maze_with_agent = deepcopy(self.maze)
+        maze_with_agent[self.agent_y][self.agent_x] = 10
+        return np.array(maze_with_agent)
     
     def _get_reward(self):
         if self.maze[self.agent_y][self.agent_x] == 2:
@@ -153,7 +160,7 @@ class SimpleMazeEnv(gym.Env):
 
 
 if __name__ == "__main__":
-    env = MazeEnv()
+    env = SimpleMazeEnv()
 
     obs = env.reset()
     done = False
