@@ -8,8 +8,8 @@ from copy import deepcopy
 
 # Define actions
 ACTION_UP = 0
-ACTION_DOWN = 1
-ACTION_LEFT = 2
+ACTION_LEFT = 1
+ACTION_DOWN = 2
 ACTION_RIGHT = 3
 
 MAX_SIZE = 30
@@ -24,7 +24,7 @@ BLUE = (0, 0, 255)
 class SimpleMazeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     
-    def __init__(self, maze: list[list[int]]=None, cell_size: int=None):
+    def __init__(self, maze: list[list[int]]=None, cell_size: int=None, max_steps: int=200):
         super().__init__()
 
         if not maze:
@@ -33,7 +33,7 @@ class SimpleMazeEnv(gym.Env):
                 [9, 1, 0, 0, 0, 9],
                 [9, 8, 8, 8, 0, 9],
                 [9, 0, 0, 0, 0, 9],
-                [9, 2, 8, 8, 8, 9],
+                [9, 2, 9, 8, 9, 9],
                 [9, 9, 9, 9, 9, 9]
             ]
         else:
@@ -48,7 +48,7 @@ class SimpleMazeEnv(gym.Env):
 
         # Set the dimensions of the maze
         if not cell_size:
-            self.cell_size = 500/len(self.maze[0])
+            self.cell_size = 512/len(self.maze[0])
         else:
             self.cell_size = cell_size
         self.maze_width = len(self.maze[0])*self.cell_size
@@ -56,11 +56,11 @@ class SimpleMazeEnv(gym.Env):
         
         
         self.action_space = spaces.Discrete(4)
-        self.observation_space = spaces.Box(low=0, high=2, shape=(len(self.maze), len(self.maze[0])), dtype=np.int32)
+        self.observation_space = spaces.Box(low=0, high=2, shape=(2, len(self.maze), len(self.maze[0])), dtype=np.int32)
         
         self.agent_x = 1
         self.agent_y = 1
-        self.max_steps = 100
+        self.max_steps = max_steps
         self.steps = 0
         self.finished = False
 
@@ -77,13 +77,13 @@ class SimpleMazeEnv(gym.Env):
     def step(self, action):
         self.steps += 1
         
-        if action == ACTION_UP and self.maze[self.agent_y - 1][self.agent_x] not in [8, 9]:
+        if action == ACTION_UP and self.maze[self.agent_y - 1][self.agent_x] != 9:
             self.agent_y -= 1
-        elif action == ACTION_DOWN and self.maze[self.agent_y + 1][self.agent_x] not in [8, 9]:
+        elif action == ACTION_DOWN and self.maze[self.agent_y + 1][self.agent_x] != 9:
             self.agent_y += 1
-        elif action == ACTION_LEFT and self.maze[self.agent_y][self.agent_x - 1] not in [8, 9]:
+        elif action == ACTION_LEFT and self.maze[self.agent_y][self.agent_x - 1] != 9:
             self.agent_x -= 1
-        elif action == ACTION_RIGHT and self.maze[self.agent_y][self.agent_x + 1] not in [8, 9]:
+        elif action == ACTION_RIGHT and self.maze[self.agent_y][self.agent_x + 1] != 9:
             self.agent_x += 1
         
         observation = self._get_observation()
@@ -96,6 +96,9 @@ class SimpleMazeEnv(gym.Env):
     def render(self, mode='human'):
         if self.pygame_init_switch == 0:
             self.agent_file_path = path.dirname(path.abspath(__file__)) + '/images/agent.png'
+            self.start_file_path = path.dirname(path.abspath(__file__)) + '/images/start.png'
+            self.finish_file_path = path.dirname(path.abspath(__file__)) + '/images/finish.png'
+            self.wolf_file_path = path.dirname(path.abspath(__file__)) + '/images/wolf.png'
             # Initialize Pygame
             pygame.init()
             
@@ -112,6 +115,15 @@ class SimpleMazeEnv(gym.Env):
             # Load the agent image
             self.agent_image = pygame.image.load(self.agent_file_path).convert_alpha()
             self.agent_image = pygame.transform.scale(self.agent_image, (self.cell_size, self.cell_size))
+            # Load the start image
+            self.start_image = pygame.image.load(self.start_file_path).convert_alpha()
+            self.start_image = pygame.transform.scale(self.start_image, (self.cell_size, self.cell_size))
+            # Load the finish image
+            self.finish_image = pygame.image.load(self.finish_file_path).convert_alpha()
+            self.finish_image = pygame.transform.scale(self.finish_image, (self.cell_size, self.cell_size))
+            # Load the wolf image
+            self.wolf_image = pygame.image.load(self.wolf_file_path).convert_alpha()
+            self.wolf_image = pygame.transform.scale(self.wolf_image, (self.cell_size, self.cell_size))
             # Clear the screen
             self.screen.fill(BLACK)
             self.pygame_init_switch = 1
@@ -129,16 +141,19 @@ class SimpleMazeEnv(gym.Env):
         self.clock.tick(60)
     
     def _get_observation(self):
-        maze_with_agent = deepcopy(self.maze)
-        maze_with_agent[self.agent_y][self.agent_x] = 10
-        return np.array(maze_with_agent)
+        agent_grid = np.zeros(np.array(self.maze).shape)
+        agent_grid[self.agent_y][self.agent_x] = 1
+        return np.array([self.maze, agent_grid])
     
     def _get_reward(self):
         if self.maze[self.agent_y][self.agent_x] == 2:
             self.finished = True
-            return 1.0
+            return np.prod(np.array(self.maze).shape) + self.max_steps
+        elif self.maze[self.agent_y][self.agent_x] == 8: # Fallen into cliff
+            self.finished = True
+            return -np.prod(np.array(self.maze).shape) - self.max_steps*2
         else:
-            return 0.0
+            return -1.0
     
     def _is_done(self):
         return self.finished or self.steps >= self.max_steps
@@ -147,11 +162,14 @@ class SimpleMazeEnv(gym.Env):
         for y in range(len(self.maze)):
             for x in range(len(self.maze[y])):
                 if self.maze[y][x] == 1:  # Start cell
-                    pygame.draw.rect(self.screen, GREEN, (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
+                    pygame.draw.rect(self.screen, WHITE, (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
+                    self.screen.blit(self.start_image, (x * self.cell_size, y * self.cell_size))
                 elif self.maze[y][x] == 2:  # Finish cell
-                    pygame.draw.rect(self.screen, BLUE, (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
-                elif self.maze[y][x] == 8:  # Inner Walls
+                    pygame.draw.rect(self.screen, WHITE, (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
+                    self.screen.blit(self.finish_image, (x * self.cell_size, y * self.cell_size))
+                elif self.maze[y][x] == 8:  # Wolfs
                     pygame.draw.rect(self.screen, RED, (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
+                    self.screen.blit(self.wolf_image, (x * self.cell_size, y * self.cell_size))
                 elif self.maze[y][x] == 9:  # Outer Walls
                     pygame.draw.rect(self.screen, BLACK, (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
                 else:  # Paths
